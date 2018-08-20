@@ -2,5 +2,10 @@
 {% block title %} Sign Up {% endblock %}
 
 {% block content %}
-{{ form }}
+    <form action="" method="POST">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <input type="submit">
+    </form>
+
 {% endblock %}

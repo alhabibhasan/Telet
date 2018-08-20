@@ -4,6 +4,10 @@ from django.contrib.auth.models import User
 
 
 class PersonSignUpForm(UserCreationForm):
+    first_name = forms.CharField(required=True)
+    last_name = forms.CharField(required=True)
+    email = forms.EmailField(required=True)
+
     class Meta:
         model = User
         fields = ('first_name',
@@ -12,10 +16,10 @@ class PersonSignUpForm(UserCreationForm):
                   'password1',
                   'password2')
 
-        widgets = {
-            'first_name': forms.TextInput(attrs={'class': 'form-control'}),
-            'last_name': forms.TextInput(attrs={'class': 'form-control'}),
-            'email': forms.TextInput(attrs={'size': 35, 'class': 'form-control'}),
-            'password1': forms.PasswordInput(attrs={'class': 'form-control'}),
-            'password2': forms.PasswordInput(attrs={'class': 'form-control'}),
-        }
+    def clean_email(self):
+        email = self.cleaned_data['email']
+        if User.objects.filter(username=email).exists():
+            raise forms.ValidationError('You already have an account.',
+                                        code='exists')
+
+
