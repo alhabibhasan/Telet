@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'Telet',
     'users',
     'rest_framework',
+    'rest_framework.authtoken'
 ]
 
 DEFAULT_RENDERER_CLASSES = (
@@ -52,11 +53,13 @@ if DEBUG:
     )
 
 REST_FRAMEWORK = {
-    'DEFAULT_PERMISSION_CLASSES': (
-        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.BasicAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
     ),
     'DEFAULT_RENDERER_CLASSES': DEFAULT_RENDERER_CLASSES
 }
+
 AUTH_USER_MODEL = 'users.CustomUser'
 
 MIDDLEWARE = [
