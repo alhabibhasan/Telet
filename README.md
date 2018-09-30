@@ -5,6 +5,6 @@ Telet is an open source social networking app that I am working on in my spare t
 
 ## Why?
 
-Many times throughout my career in development, I've asked myself questions like, 'How does Facebook do this?', 'How does YouTube do that?'.
+Many times throughout my career in software development, I've asked myself questions like, 'How does Facebook do this?' and 'How does YouTube do that?'.
 
 This is me answering those questions (slowly but surely).
