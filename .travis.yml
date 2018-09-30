@@ -4,3 +4,5 @@ python:
 install:
   - pip install -r requirements.txt
 script: python manage.py test
+after_success:
+  - codecov -t 02c861c6-631b-40b5-adb8-4dd52d2e9689
