@@ -3,7 +3,11 @@ from django.utils.crypto import get_random_string
 from rest_framework import serializers
 from users.models import Teler
 
+'''
+UserSerializer is used as a nested field within the TelerSerializer.
 
+At present, it is not used as a standalone serializer.
+'''
 class UserSerializer(serializers.ModelSerializer):
     password1 = serializers.CharField(write_only=True, required=True)
     password2 = serializers.CharField(write_only=True, required=True)
