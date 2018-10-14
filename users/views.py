@@ -1,55 +1,57 @@
-from django.contrib.auth import authenticate, get_user_model
-from rest_framework import status
-from rest_framework.authtoken.models import Token
-from rest_framework.generics import CreateAPIView
-from rest_framework.permissions import AllowAny
-from rest_framework.response import Response
-from rest_framework.views import APIView
+from django.contrib import messages
+from django.contrib.auth import logout
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.contrib.auth.views import LoginView
+from django.shortcuts import render, redirect
+from django.urls import reverse_lazy
+from django.views.generic import FormView, TemplateView
+
+from users.forms import UserLoginForm, UserCreationForm
 from users.models import Teler
-from users.serializers import TelerSerializer
 
 
-class CreateUserView(CreateAPIView):
-    '''
-    This is used to allow users to sign up.
-    '''
-    model = Teler
-    permission_classes = (AllowAny,)
-    serializer_class = TelerSerializer
-
-    # You can override the POST method if you need to do any custom action before the default action is completed
+class TelerLoginView(LoginView):
+    form_class = UserLoginForm
+    template_name = 'login.html'
+    success_url = reverse_lazy('users:user-logged-in')
 
 
-class UserLoginView(APIView):
+class TelerSignUpView(FormView):
+    form_class = UserCreationForm
+    template_name = 'signup.html'
 
-    def post(self, request):
-        email = request.data['email']
-        password = request.data['password']
+    def post(self, request, *args, **kwargs):
+        sign_up_form = UserCreationForm(request.POST)
+        if sign_up_form.is_valid():
+            user = sign_up_form.save(commit=False)
+            user.username = user.email
+            user.is_active = True  # TODO: Change once we've implemented emails
+            user.save()
 
-        if email is None or password is None:
-            return Response({'error': 'Please provide both email and password'},
-                            status=status.HTTP_400_BAD_REQUEST)
+            teler = Teler(user=user,
+                          mobile_number=sign_up_form.cleaned_data['mobile_phone'],
+                          date_of_birth=sign_up_form.cleaned_data['date_of_birth'],
+                          gender=sign_up_form.cleaned_data['gender']
+                          )
+            teler.save()
 
-        username = self._get_username(email)
+            return redirect(to=reverse_lazy('users:user-login'))
 
-        # set the default value to None
-        user = None
-        if username is not None:
-            # if the user doesn't exist, then it will stay as None
-            user = authenticate(username=username, password=password)
+        messages.warning(request,
+                         'The form was filled in incorrectly, please try again. ' + str(sign_up_form.error_messages))
+        return redirect(to=reverse_lazy('users:user-signup'))
 
-        # if the user name didn't exist (so email was fake)
-        # OR the email and password were wrong, then run this if statement
-        if username is None or user is None:
-            return Response({'error': 'Invalid Credentials'},
-                            status=status.HTTP_404_NOT_FOUND)
 
-        token, created = Token.objects.get_or_create(user=user)
-        return Response({'token': token.key},
-                        status=status.HTTP_200_OK)
+class TelerLoggedInView(LoginRequiredMixin, TemplateView):
+    template_name = 'logged-in.html'
+    login_url = reverse_lazy('users:user-login')
 
-    def _get_username(self, email):
-        user = get_user_model().objects.filter(email=email)
-        if user is not None and len(user) == 1:
-            return user.first().username
-        return None
+
+class TelerUserLogout(LoginRequiredMixin, TemplateView):
+    login_url = reverse_lazy('users:user-login')
+    template_name = 'logged-out.html'
+
+    def get(self, request, *args, **kwargs):
+        logout(request)
+        return render(request=self.request,
+                      template_name=self.template_name)
