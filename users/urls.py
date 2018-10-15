@@ -1,23 +1,23 @@
 from django.urls import path
 
-from users.views import TelerLoginView, TelerSignUpView, TelerLoggedInView, TelerUserLogout
+from users.views import TelerSignInView, TelerSignUpView, TelerSignedInView, TelerUserSignout
 
 urlpatterns = [
-    path('login/',
-         TelerLoginView.as_view(),
-         name='user-login'
+    path('signin/',
+         TelerSignInView.as_view(),
+         name='signin'
          ),
     path('signup/',
          TelerSignUpView.as_view(),
-         name='user-signup'
+         name='signup'
          ),
-    path('logged-in/',
-         TelerLoggedInView.as_view(),
-         name='user-logged-in'
+    path('signed-in/',
+         TelerSignedInView.as_view(),
+         name='signed-in'
          ),
-    path('log-out/',
-         TelerUserLogout.as_view(),
-         name='user-logout'
+    path('signout/',
+         TelerUserSignout.as_view(),
+         name='signout'
          ),
 
 ]

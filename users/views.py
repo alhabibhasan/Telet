@@ -10,12 +10,12 @@ from users.forms import UserLoginForm, UserSignUpForm
 from users.models import Teler
 
 
-class TelerLoginView(LoginView):
+class TelerSignInView(LoginView):
     authentication_form = UserLoginForm
-    template_name = 'login.html'
+    template_name = 'signin.html'
 
     def get_success_url(self):
-        return reverse_lazy('users:user-logged-in')
+        return reverse_lazy('users:signed-in')
 
 
 class TelerSignUpView(FormView):
@@ -38,21 +38,21 @@ class TelerSignUpView(FormView):
                           )
             teler.save()
 
-            return redirect(to=reverse_lazy('users:user-login'))
+            return redirect(to=reverse_lazy('users:signin'))
 
         messages.warning(request,
                          'The form was filled in incorrectly, please try again. ' + str(sign_up_form.error_messages))
-        return redirect(to=reverse_lazy('users:user-signup'))
+        return redirect(to=reverse_lazy('users:signup'))
 
 
-class TelerLoggedInView(LoginRequiredMixin, TemplateView):
-    template_name = 'logged-in.html'
-    login_url = reverse_lazy('users:user-login')
+class TelerSignedInView(LoginRequiredMixin, TemplateView):
+    template_name = 'signed-in.html'
+    login_url = reverse_lazy('users:signin')
 
 
-class TelerUserLogout(LoginRequiredMixin, TemplateView):
-    login_url = reverse_lazy('users:user-login')
-    template_name = 'logged-out.html'
+class TelerUserSignout(LoginRequiredMixin, TemplateView):
+    login_url = reverse_lazy('users:signin')
+    template_name = 'signed-out.html'
 
     def get(self, request, *args, **kwargs):
         logout(request)
