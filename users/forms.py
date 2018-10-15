@@ -16,12 +16,11 @@ class UserLoginForm(AuthenticationForm):
         model = CustomUser
 
 
-
-class UserCreationForm(UserCreationForm):
+class UserSignUpForm(UserCreationForm):
     """
     TODO: Add profile image field once you set up some backend storage for images.
     """
-    mobile_phone = forms.CharField(max_length=20)
+    mobile_number = forms.CharField(max_length=20)
 
     date_of_birth = forms.DateField(help_text=" Format: DD/MM/YYYY",
                                     input_formats=[
@@ -37,6 +36,7 @@ class UserCreationForm(UserCreationForm):
                                         )
         return email
 
+
     class Meta(UserCreationForm):
         model = CustomUser
         fields = ('email',
@@ -44,7 +44,9 @@ class UserCreationForm(UserCreationForm):
                   'last_name',
                   'gender',
                   'date_of_birth',
-                  'mobile_phone',
+                  'mobile_number',
+                  'password1',
+                  'password2',
                   )
 
         widgets = {
@@ -52,10 +54,7 @@ class UserCreationForm(UserCreationForm):
             'last_name': forms.TextInput,
             'gender': forms.Select,
             'email': forms.EmailInput,
-            'mobile': forms.CharField,
-            'password1': forms.PasswordInput,
-            'password2': forms.PasswordInput,
-
+            'mobile_number': forms.CharField,
         }
 
 
