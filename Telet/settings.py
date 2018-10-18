@@ -27,22 +27,6 @@ DEBUG = True
 
 ALLOWED_HOSTS = []
 
-# Import secrets file
-
-import json
-import os
-from django.core.exceptions import ImproperlyConfigured
-
-with open(os.path.join(BASE_DIR, 'secrets.json')) as secrets_file:
-    secrets = json.load(secrets_file)
-
-def get_secret(setting, secrets=secrets):
-    """Get secret setting or fail with ImproperlyConfigured"""
-    try:
-        return secrets[setting]
-    except KeyError:
-        raise ImproperlyConfigured("Set the {} setting".format(setting))
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -137,3 +121,26 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/2.1/howto/static-files/
 
 STATIC_URL = '/static/'
+
+# Import secrets file
+
+import json
+import os
+from django.core.exceptions import ImproperlyConfigured
+
+with open(os.path.join(BASE_DIR, 'secrets.json')) as secrets_file:
+    secrets = json.load(secrets_file)
+
+def get_secret(setting, secrets=secrets):
+    """Get secret setting or fail with ImproperlyConfigured"""
+    try:
+        return secrets[setting]
+    except KeyError:
+        raise ImproperlyConfigured("Set the {} setting".format(setting))
+
+
+EMAIL_HOST = get_secret('EMAIL_HOST')
+EMAIL_PORT = get_secret('EMAIL_PORT')
+EMAIL_HOST_USER = get_secret('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = get_secret('EMAIL_HOST_PASSWORD')
+EMAIL_USE_TLS = True
