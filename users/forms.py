@@ -12,6 +12,17 @@ class UserLoginForm(AuthenticationForm):
         label="Email"
     )
 
+    def confirm_login_allowed(self, user):
+
+        teler = Teler.objects.get(user=user)
+        if not teler.email_verified:
+            raise forms.ValidationError(
+                message='Your email address has not been activated yet, please check your email and try again.',
+                code='inactive'
+            )
+
+        return super().confirm_login_allowed(user=user)
+
     class Meta(AuthenticationForm):
         model = CustomUser
 
