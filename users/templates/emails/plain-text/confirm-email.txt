@@ -1,7 +1,15 @@
-Please confirm your email address by going to the following link:
+{% extends 'emails/plain-text/base.txt' %}
+{% block body %}
 
-{{ user.first_name }}
+Thanks for joining Telet, we just wanted to check one last thing.
+
+Please confirm your email address here:
 
 {% autoescape off %}
-Some link here
+http://{{ domain }}{% url 'users:activate' uidb64=uid token=token %}
 {% endautoescape %}
+
+
+Not expecting this email? Feel free to ignore it!
+
+{% endblock %}
