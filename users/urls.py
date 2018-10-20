@@ -1,6 +1,6 @@
 from django.urls import path
 
-from users.views import TelerSignInView, TelerSignUpView, TelerSignedInView, TelerUserSignout
+from users.views import TelerSignInView, TelerSignUpView, TelerSignedInView, TelerUserSignout, TelerUserActivation
 
 urlpatterns = [
     path('signin/',
@@ -19,5 +19,9 @@ urlpatterns = [
          TelerUserSignout.as_view(),
          name='signout'
          ),
+    path('activate/<uidb64>/<token>',
+         TelerUserActivation.as_view(),
+         name='activate'
+         )
 
 ]
