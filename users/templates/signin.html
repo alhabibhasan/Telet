@@ -1,5 +1,11 @@
-<form action="" method="post">
-    {% csrf_token %}
-    {{ form.as_p }}
-    <input type="submit" class="btn btn-primary" value="Login"/>
-</form>
+{% extends 'base.html' %}
+{% block title %}
+    Sign in
+{% endblock %}
+{% block content %}
+    <form action="" method="POST">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <input type="submit" value="Sign in"/>
+    </form>
+{% endblock %}
