@@ -1,0 +1,7 @@
+Please confirm your email address by going to the following link:
+
+{{ user.first_name }}
+
+{% autoescape off %}
+Some link here
+{% endautoescape %}
