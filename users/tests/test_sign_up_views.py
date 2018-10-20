@@ -1,12 +1,14 @@
 from django.test import TestCase
+from django.urls import reverse_lazy
 
 from users.forms import UserSignUpForm
+from users.models import CustomUser
 
 
 class TestPatientSignUp(TestCase):
     def test_sign_up_normal(self):
 
-        form = UserSignUpForm(data={
+        data= {
             'email': 'test@telet.com',
             'first_name': 'Test',
             'last_name': 'User',
@@ -15,14 +17,20 @@ class TestPatientSignUp(TestCase):
             'mobile_number': '07940236488',
             'password1': 'random_password_123',
             'password2': 'random_password_123'
-        })
+        }
 
-        self.assertTrue(form.is_valid())
+        response = self.client.post(reverse_lazy('users:signup'), data=data)
+
+        user = CustomUser.objects.filter(email='test@telet.com')[0]
+
+        self.assertTrue(user.email == 'test@telet.com')
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response=response,expected_url='/users/signin/')
 
 
     def test_sign_up_password_mismatch(self):
 
-        form = UserSignUpForm(data={
+        data={
             'email': 'test@telet.com',
             'first_name': 'Test',
             'last_name': 'User',
@@ -31,13 +39,16 @@ class TestPatientSignUp(TestCase):
             'mobile_number': '07940236488',
             'password1': 'random_password_123',
             'password2': 'random_password_456'
-        })
+        }
 
-        self.assertFalse(form.is_valid())
+        response = self.client.post(reverse_lazy('users:signup'), data=data)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response=response, expected_url='/users/signup/')
 
     def test_sign_up_invalid_email(self):
 
-        form = UserSignUpForm(data={
+        data={
             'email': 'test',
             'first_name': 'Test',
             'last_name': 'User',
@@ -46,12 +57,15 @@ class TestPatientSignUp(TestCase):
             'mobile_number': '07940236488',
             'password1': 'random_password_123',
             'password2': 'random_password_123'
-        })
+        }
 
-        self.assertFalse(form.is_valid())
+        response = self.client.post(reverse_lazy('users:signup'), data=data)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response=response, expected_url='/users/signup/')
 
     def test_sign_up_invalid_DOB(self):
-        form = UserSignUpForm(data={
+        data={
             'email': 'test@telet.com',
             'first_name': 'Test',
             'last_name': 'User',
@@ -60,12 +74,15 @@ class TestPatientSignUp(TestCase):
             'mobile_number': '07940236488',
             'password1': 'random_password_123',
             'password2': 'random_password_123'
-        })
+        }
 
-        self.assertFalse(form.is_valid())
+        response = self.client.post(reverse_lazy('users:signup'), data=data)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response=response, expected_url='/users/signup/')
 
     def test_sign_up_invalid_gender(self):
-        form = UserSignUpForm(data={
+        data={
             'email': 'test@telet.com',
             'first_name': 'Test',
             'last_name': 'User',
@@ -74,9 +91,12 @@ class TestPatientSignUp(TestCase):
             'mobile_number': '07940236488',
             'password1': 'random_password_123',
             'password2': 'random_password_123'
-        })
+        }
 
-        self.assertFalse(form.is_valid())
+        response = self.client.post(reverse_lazy('users:signup'), data=data)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response=response, expected_url='/users/signup/')
 
     def test_sign_up_email_exists(self):
         from users.models import CustomUser
@@ -84,7 +104,7 @@ class TestPatientSignUp(TestCase):
         user.set_password('random_password_123')
         user.save()
 
-        form = UserSignUpForm(data={
+        data={
             'email': 'test@telet.com',
             'first_name': 'Test',
             'last_name': 'User',
@@ -93,6 +113,9 @@ class TestPatientSignUp(TestCase):
             'mobile_number': '07940236488',
             'password1': 'random_password_123',
             'password2': 'random_password_123'
-        })
+        }
 
-        self.assertFalse(form.is_valid())
+        response = self.client.post(reverse_lazy('users:signup'), data=data)
+
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response=response, expected_url='/users/signup/')

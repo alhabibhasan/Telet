@@ -43,5 +43,5 @@ class TestPatientSignIn(TestCase):
 
         user = auth.get_user(self.client)
 
-        self.assertEqual(response_sign_out.status_code, 200)
+        self.assertEqual(response_sign_out.status_code, 302)
         self.assertFalse(user.is_authenticated)
