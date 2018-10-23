@@ -1,4 +1,4 @@
-{% extends 'emails/plain-text/base.txt' %}
+{% extends 'emails/plain_text/base.txt' %}
 {% block body %}
 
 Thanks for joining Telet, we just wanted to check one last thing.

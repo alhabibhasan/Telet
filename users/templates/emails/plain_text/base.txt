@@ -1,0 +1,9 @@
+Hey {{ user.first_name }},
+
+{% block body %}{% endblock %}
+
+{% block signoff %}
+With best wishes,
+
+Your Friends at Telet
+{% endblock %}
