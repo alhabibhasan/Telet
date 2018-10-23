@@ -8,7 +8,7 @@ from Telet.utils.token_generator import account_activation_token_generator
 sender_email = 'hello@telet.com'
 
 
-def send_email_confirmation_email(user, domain):
+def send_email_activation_email(user, domain):
     """
     This function will send an email confirmation email to a specified user
     :param user: The user object to email
@@ -22,7 +22,7 @@ def send_email_confirmation_email(user, domain):
         'token': account_activation_token_generator.make_token(user),
     }
     plain_text_message = render_to_string(
-        'emails/plain-text/confirm-email.txt',
+        'emails/plain_text/confirm_email.txt',
         context
     )
     result = send_mail(
