@@ -1,0 +1,37 @@
+{% extends 'emails/html/base.html' %}
+
+{% block email_preheader %}
+    Activate your account.
+{% endblock %}
+
+{% block email_opening %}
+    <p>
+        Thanks for joining Telet, we just wanted to check one last thing.
+    </p>
+    <p>
+        Please confirm your email address below.
+    </p>
+
+{% endblock %}
+
+
+{% block email_CTA %}
+     <a href="{% autoescape off %}http://{{ domain }}{% url 'users:activate' uidb64=uid token=token %}{% endautoescape %}" target="_blank">
+         Activate my account!
+     </a>
+
+{% endblock %}
+
+{% block email_sign_off_remarks %}
+    <p>
+        If clicking the link above didn't work, please copy and paste the following URL in a new browser
+        window instead.
+    <p>
+        {% autoescape on %}http://{{ domain }}{% url 'users:activate' uidb64=uid token=token %}{% endautoescape %}
+    </p>
+    </p>
+    <p>
+        P.S. If you weren't expecting this email, feel free to ignore it.
+    </p>
+{% endblock %}
+
