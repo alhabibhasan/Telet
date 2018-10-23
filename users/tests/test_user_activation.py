@@ -2,121 +2,108 @@
 from datetime import date
 
 from django.contrib.auth import get_user_model
+from django.contrib.messages import get_messages
 from django.test import TestCase
+from django.urls import reverse_lazy
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode
 
-from users.forms import UserLoginForm
+from Telet.utils.token_generator import account_activation_token_generator
 from users.models import Teler
 
 
-class TestPatientSignIn(TestCase):
-
+class TestUserAccountActivation(TestCase):
     def setUp(self):
-        test_user_1 = get_user_model().objects.create_user(email='telet@test1.com', username='telet@test1.com', )
-        test_user_1.set_password('12345')
-        test_user_1.save()
+        self.test_user_1 = get_user_model().objects.create_user(email='telet@test1.com', username='telet@test1.com', )
+        self.test_user_1.set_password('12345')
+        self.test_user_1.save()
 
-        test_teler_1 = Teler.objects.create(user=test_user_1,
-                                            gender='M',
-                                            mobile_number='07940236488',
-                                            date_of_birth=date(year=1998, month=4, day=11),
-                                            email_verified=True
-                                            )
-        test_teler_1.save()
+        self.test_teler_1 = Teler.objects.create(user=self.test_user_1,
+                                                 gender='M',
+                                                 mobile_number='07940236488',
+                                                 date_of_birth=date(year=1998, month=4, day=11),
+                                                 )
+        self.test_teler_1.save()
 
-        test_user_2 = get_user_model().objects.create_user(email='telet@test2.com', username='telet@test2.com')
-        test_user_2.set_password('abcde')
-        test_user_2.save()
+    def test_user_activation(self):
+        uidb64 = urlsafe_base64_encode(force_bytes(self.test_user_1.pk)).decode('UTF-8')
+        token = account_activation_token_generator.make_token(self.test_user_1)
 
-        test_teler_2 = Teler.objects.create(user=test_user_2,
-                                            gender='M',
-                                            mobile_number='0000000000',
-                                            date_of_birth=date(year=1998, month=4, day=11),
-                                            email_verified=True
-                                            )
-        test_teler_2.save()
+        self.assertFalse(self.test_teler_1.email_verified)
 
-        test_user_3 = get_user_model().objects.create_user(email='telet@test3.com', username='telet@test3.com')
-        test_user_3.set_password('123456')
-        test_user_3.save()
+        response = self.client.get(reverse_lazy('users:activate',
+                                                kwargs={
+                                                    'uidb64': uidb64,
+                                                    'token': token
+                                                }))
 
-        test_user_4 = get_user_model().objects.create_user(email='telet@test4.com', username='telet@test4.com')
-        test_user_4.set_password('123456')
-        test_user_4.save()
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, expected_url='/users/signed-in/')
+        # reload the latest teler object
 
-        test_teler_4 = Teler.objects.create(user=test_user_4,
-                                            gender='M',
-                                            mobile_number='0000000000',
-                                            date_of_birth=date(year=1998, month=4, day=11),
-                                            email_verified=False
-                                            )
-        test_teler_4.save()
+        test_teler_1 = Teler.objects.get(user=self.test_user_1)
 
-    def test_sign_in_form_valid_details(self):
+        self.assertTrue(test_teler_1.email_verified)
+
+    def test_non_existant_user_activation(self):
+        uidb64 = urlsafe_base64_encode(force_bytes('1213')).decode('UTF-8')
+        token = account_activation_token_generator.make_token(self.test_user_1)
+
+        response = self.client.get(reverse_lazy('users:activate',
+                                                kwargs={
+                                                    'uidb64': uidb64,
+                                                    'token': token
+                                                }))
+
+        messages = list(get_messages(response.wsgi_request))
+
+        # check the messages
+        self.assertEqual(str(messages[0]),
+                         'Unfortunately that link didn\'t work, please request another one and try again.')
+
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response, expected_url='/users/signin/')
+
+    def test_send_activation_email_form_view(self):
         data = {
-            'username': 'telet@test1.com',
-            'password': '12345'
+            'email': 'telet@test1.com',
         }
 
-        sign_in_form = UserLoginForm(data=data)
+        response = self.client.post(reverse_lazy('users:send_activation_email'), data=data)
 
-        self.assertTrue(sign_in_form.is_valid())
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response=response, expected_url='/users/signin/')
 
-    def test_sign_in_form_invalid_email_1(self):
+        messages = list(get_messages(response.wsgi_request))
+
+        # check the messages
+        self.assertEqual(str(messages[0]),
+                         'An activation email was sent again, please check you emails.')
+
+    def test_send_activation_email_form_view_with_invalid_email(self):
         data = {
-            'username': 'telet',
-            'password': '12345'
+            'email': 'test',
         }
 
-        sign_in_form = UserLoginForm(data=data)
+        response = self.client.post(reverse_lazy('users:send_activation_email'), data=data)
 
-        self.assertFalse(sign_in_form.is_valid())
+        self.assertEqual(response.status_code, 200)
 
-    def test_sign_in_form_invalid_email_2(self):
+        self.assertTemplateUsed(response, 'registration/teler_send_email_activation.html')
+
+
+    def test_send_activation_email_form_view_with_email_non_existant(self):
         data = {
-            'username': 'telet@live',
-            'password': '12345'
+            'email': 'test@user.net',
         }
 
-        sign_in_form = UserLoginForm(data=data)
+        response = self.client.post(reverse_lazy('users:send_activation_email'), data=data)
 
-        self.assertFalse(sign_in_form.is_valid())
+        self.assertEqual(response.status_code, 302)
+        self.assertRedirects(response=response, expected_url='/users/signin/')
 
-    def test_sign_in_form_invalid_missing_email(self):
-        data = {
-            'username': '',
-            'password': '12345'
-        }
+        messages = list(get_messages(response.wsgi_request))
 
-        sign_in_form = UserLoginForm(data=data)
-
-        self.assertFalse(sign_in_form.is_valid())
-
-    def test_sign_in_form_invalid_missing_password(self):
-        data = {
-            'username': 'telet@user.com',
-            'password': ''
-        }
-
-        sign_in_form = UserLoginForm(data=data)
-
-        self.assertFalse(sign_in_form.is_valid())
-
-    def test_sign_in_not_teler(self):
-        data = {
-            'username': 'telet@user3.com',
-            'password': '123456'
-        }
-
-        sign_in_form = UserLoginForm(data=data)
-
-        self.assertFalse(sign_in_form.is_valid())
-
-    def test_sign_in_email_not_verified(self):
-        data = {
-            'username': 'telet@test4.com',
-            'password': '123456'
-        }
-
-        sign_in_form = UserLoginForm(data=data)
-        self.assertTrue('Your email address has not been activated yet, please check your email and try again.' in str(sign_in_form.errors))
-        self.assertFalse(sign_in_form.is_valid())
+        # check the messages
+        self.assertEqual(str(messages[0]),
+                         'An activation email was sent again, please check you emails.')

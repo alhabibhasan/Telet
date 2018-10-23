@@ -3,7 +3,7 @@ from django.test import TestCase
 from users.forms import UserSignUpForm
 
 
-class TestPatientSignUp(TestCase):
+class TestUserSignUpForms(TestCase):
     def test_sign_up_normal(self):
 
         form = UserSignUpForm(data={

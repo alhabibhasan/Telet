@@ -8,7 +8,7 @@ from users.forms import UserLoginForm
 from users.models import Teler
 
 
-class TestPatientSignIn(TestCase):
+class TestUserSignInViews(TestCase):
 
     def setUp(self):
         test_user_1 = get_user_model().objects.create_user(email='telet@test1.com', username='telet@test1.com', )
@@ -18,7 +18,8 @@ class TestPatientSignIn(TestCase):
         test_teler_1 = Teler.objects.create(user=test_user_1,
                                             gender='M',
                                             mobile_number='07940236488',
-                                            date_of_birth=date(year=1998, month=4, day=11)
+                                            date_of_birth=date(year=1998, month=4, day=11),
+                                            email_verified=True
                                             )
         test_teler_1.save()
 
@@ -29,13 +30,26 @@ class TestPatientSignIn(TestCase):
         test_teler_2 = Teler.objects.create(user=test_user_2,
                                             gender='M',
                                             mobile_number='0000000000',
-                                            date_of_birth=date(year=1998, month=4, day=11)
+                                            date_of_birth=date(year=1998, month=4, day=11),
+                                            email_verified=True
                                             )
         test_teler_2.save()
 
         test_user_3 = get_user_model().objects.create_user(email='telet@test3.com', username='telet@test3.com')
-        test_user_3.set_password('wxyz')
+        test_user_3.set_password('123456')
         test_user_3.save()
+
+        test_user_4 = get_user_model().objects.create_user(email='telet@test4.com', username='telet@test4.com')
+        test_user_4.set_password('123456')
+        test_user_4.save()
+
+        test_teler_4 = Teler.objects.create(user=test_user_4,
+                                            gender='M',
+                                            mobile_number='0000000000',
+                                            date_of_birth=date(year=1998, month=4, day=11),
+                                            email_verified=False
+                                            )
+        test_teler_4.save()
 
     def test_sign_in_form_valid_details(self):
         data = {
@@ -90,9 +104,19 @@ class TestPatientSignIn(TestCase):
     def test_sign_in_not_teler(self):
         data = {
             'username': 'telet@user3.com',
-            'password': 'wxyz'
+            'password': '123456'
         }
 
         sign_in_form = UserLoginForm(data=data)
 
+        self.assertFalse(sign_in_form.is_valid())
+
+    def test_sign_in_email_not_verified(self):
+        data = {
+            'username': 'telet@test4.com',
+            'password': '123456'
+        }
+
+        sign_in_form = UserLoginForm(data=data)
+        self.assertTrue('Your email address has not been activated yet, please check your email and try again.' in str(sign_in_form.errors))
         self.assertFalse(sign_in_form.is_valid())

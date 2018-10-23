@@ -5,7 +5,7 @@ from users.forms import UserSignUpForm
 from users.models import CustomUser
 
 
-class TestPatientSignUp(TestCase):
+class TestUserSignUpViews(TestCase):
     def test_sign_up_normal(self):
 
         data= {

@@ -9,7 +9,7 @@ from django.urls import reverse_lazy
 from users.models import Teler
 
 
-class TestPatientSignIn(TestCase):
+class TestUserSignOutViews(TestCase):
 
     def setUp(self):
         test_user_1 = get_user_model().objects.create_user(email='telet@test1.com', username='telet@test1.com', )
@@ -19,8 +19,8 @@ class TestPatientSignIn(TestCase):
         test_teler_1 = Teler.objects.create(user=test_user_1,
                                             gender='M',
                                             mobile_number='07940236488',
-                                            date_of_birth=date(year=1998, month=4, day=11)
-                                            )
+                                            date_of_birth=date(year=1998, month=4, day=11),
+                                            email_verified=True)
         test_teler_1.save()
 
     def test_sign_in_valid_details(self):
