@@ -1,6 +1,8 @@
 from django.urls import path
 
-from users.views import *
+from users.views.account_activation_views import *
+from users.views.password_reset_views import *
+from users.views.authentication_views import *
 
 urlpatterns = [
     path('signin/',
