@@ -1,14 +1,16 @@
-import time
 from datetime import date
-from django.test import TestCase
 
-from Telet.utils.token_generator import account_activation_token_generator
+from django.contrib.sites.shortcuts import get_current_site
+from django.test import TestCase, RequestFactory
+from django.urls import reverse_lazy
+
+from Telet.utils.emails import send_email_activation_email
 from users.models import CustomUser, Teler
 
 
-class TestTokenGeneratorHashValueFunction(TestCase):
+class TestSendingEmails(TestCase):
 
-    def test_hash_value_return(self):
+    def test_sending_email_confirmation_email(self):
         user = CustomUser(email='test@telet.com',
                           first_name='Test',
                           last_name='User',
@@ -22,9 +24,11 @@ class TestTokenGeneratorHashValueFunction(TestCase):
                       email_verified=False)
         teler.save()
 
-        timestamp = time.time()
+        rf = RequestFactory()
+        request = rf.get(reverse_lazy('users:signin'))
 
-        hash_value = account_activation_token_generator._make_hash_value(user, timestamp)
+        self.assertEqual(send_email_activation_email(user, get_current_site(request)), 1)
 
-        self.assertEqual(hash_value, str(user.id) + str(teler.email_verified) + str(timestamp))
+
+
 
