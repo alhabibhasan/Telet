@@ -4,7 +4,7 @@ from django.contrib.sites.shortcuts import get_current_site
 from django.test import TestCase, RequestFactory
 from django.urls import reverse_lazy
 
-from Telet.utils.emails import send_email_activation_email
+from users.utils.emails import send_email_activation_email
 from users.models import CustomUser, Teler
 
 

@@ -2,7 +2,7 @@ import time
 from datetime import date
 from django.test import TestCase
 
-from Telet.utils.token_generator import account_activation_token_generator
+from users.utils.token_generator import account_activation_token_generator
 from users.models import CustomUser, Teler
 
 

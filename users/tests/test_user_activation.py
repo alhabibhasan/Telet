@@ -8,7 +8,7 @@ from django.urls import reverse_lazy
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 
-from Telet.utils.token_generator import account_activation_token_generator
+from users.utils.token_generator import account_activation_token_generator
 from users.models import Teler
 
 

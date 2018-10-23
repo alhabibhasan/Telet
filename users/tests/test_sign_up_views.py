@@ -43,8 +43,8 @@ class TestUserSignUpViews(TestCase):
 
         response = self.client.post(reverse_lazy('users:signup'), data=data)
 
-        self.assertEqual(response.status_code, 302)
-        self.assertRedirects(response=response, expected_url='/users/signup/')
+        self.assertEqual(response.status_code, 200)
+
 
     def test_sign_up_invalid_email(self):
 
@@ -61,8 +61,8 @@ class TestUserSignUpViews(TestCase):
 
         response = self.client.post(reverse_lazy('users:signup'), data=data)
 
-        self.assertEqual(response.status_code, 302)
-        self.assertRedirects(response=response, expected_url='/users/signup/')
+        self.assertEqual(response.status_code, 200)
+
 
     def test_sign_up_invalid_DOB(self):
         data={
@@ -78,8 +78,8 @@ class TestUserSignUpViews(TestCase):
 
         response = self.client.post(reverse_lazy('users:signup'), data=data)
 
-        self.assertEqual(response.status_code, 302)
-        self.assertRedirects(response=response, expected_url='/users/signup/')
+        self.assertEqual(response.status_code, 200)
+
 
     def test_sign_up_invalid_gender(self):
         data={
@@ -95,8 +95,8 @@ class TestUserSignUpViews(TestCase):
 
         response = self.client.post(reverse_lazy('users:signup'), data=data)
 
-        self.assertEqual(response.status_code, 302)
-        self.assertRedirects(response=response, expected_url='/users/signup/')
+        self.assertEqual(response.status_code, 200)
+
 
     def test_sign_up_email_exists(self):
         from users.models import CustomUser
@@ -117,5 +117,4 @@ class TestUserSignUpViews(TestCase):
 
         response = self.client.post(reverse_lazy('users:signup'), data=data)
 
-        self.assertEqual(response.status_code, 302)
-        self.assertRedirects(response=response, expected_url='/users/signup/')
+        self.assertEqual(response.status_code, 200)
