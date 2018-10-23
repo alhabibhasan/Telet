@@ -76,3 +76,7 @@ class UserChangeForm(UserChangeForm):
                   'last_name',
                   'email',
                   )
+
+
+class SendEmailActivationForm(forms.Form):
+    email = forms.EmailField()
