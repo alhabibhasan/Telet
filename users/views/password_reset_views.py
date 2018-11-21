@@ -1,29 +1,76 @@
-from django.contrib.auth.views import PasswordResetView, PasswordResetDoneView, PasswordResetConfirmView, \
-    PasswordResetCompleteView
-from django.urls import reverse_lazy
+from django.contrib.auth.admin import sensitive_post_parameters_m
+from django.contrib.auth.views import PasswordResetConfirmView, \
+    PasswordChangeView
+from rest_framework import status
+from rest_framework.generics import GenericAPIView
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
 
-from users.auth_mixins import TelerLogOutRequiredMixin
+from users.expiring_token_auth import ExpiringTokenAuthentication
+from users.serializers.password_reset_serializers import PasswordResetSerializer, PasswordResetConfirmSerializer, \
+    PasswordChangeSerializer
 
-class TelerPasswordReset(TelerLogOutRequiredMixin):
-    redirect_url = reverse_lazy('users:signed_in')
-    redirect_error_message = 'To change your password, use the change password option.'
-
-
-class TelerPasswordResetView(TelerPasswordReset, PasswordResetView):
-    email_template_name = 'emails/html/password_reset_email.html'
-    subject_template_name = 'emails/plain_text/password_reset_subject'
-    template_name = 'registration/teler_password_reset.html'
-    success_url = reverse_lazy('users:password_reset_done')
-
-
-class TelerPasswordResetDoneView(TelerPasswordReset, PasswordResetDoneView):
-    template_name = 'registration/teler_password_reset_done.html'
+"""
+Source: https://github.com/Tivix/django-rest-auth/tree/master/rest_auth
+"""
 
 
-class TelerPasswordResetConfirmView(TelerPasswordReset, PasswordResetConfirmView):
-    template_name = 'registration/teler_password_reset_confirm.html'
-    success_url = reverse_lazy('users:password_reset_complete')
+class TelerPasswordResetView(GenericAPIView):
+    """
+    Calls Django Auth PasswordResetForm save method.
+    Accepts the following POST parameters: email
+    Returns the success/fail message.
+    """
+    serializer_class = PasswordResetSerializer
+    permission_classes = (AllowAny,)
+
+    def post(self, request, *args, **kwargs):
+        # Create a serializer with request.data
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        serializer.save()
+        # Return the success message with OK HTTP status
+        return Response(
+            {"detail": "Password reset e-mail has been sent."},
+            status=status.HTTP_200_OK
+        )
 
 
-class TelerPasswordResetCompleteView(TelerPasswordReset, PasswordResetCompleteView):
-    template_name = 'registration/teler_password_reset_complete.html'
+class TelerPasswordResetConfirmView(GenericAPIView):
+    """
+    Password reset e-mail link is confirmed, therefore
+    this resets the user's password.
+    Accepts the following POST parameters: token, uid,
+        new_password1, new_password2
+    Returns the success/fail message.
+    """
+    serializer_class = PasswordResetConfirmSerializer
+    permission_classes = (AllowAny,)
+
+    def post(self, request, *args, **kwargs):
+        assert 'uidb64' and 'token' in request.data
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(
+            {"detail": "Password has been reset with the new password."}
+        )
+
+
+class TelerPasswordChangeView(GenericAPIView):
+    """
+    Calls Django Auth SetPasswordForm save method.
+    Accepts the following POST parameters: new_password1, new_password2
+    Returns the success/fail message.
+    """
+    serializer_class = PasswordChangeSerializer
+    authentication_classes = (ExpiringTokenAuthentication,)
+    permission_classes = (IsAuthenticated,)
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({"detail": "New password has been saved."})

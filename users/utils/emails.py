@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.utils.encoding import force_bytes
@@ -5,7 +6,6 @@ from django.utils.http import urlsafe_base64_encode
 
 from users.utils.token_generator import account_activation_token_generator
 
-sender_email = 'hello@telet.com'
 
 
 def send_email_activation_email(user, domain):
@@ -33,7 +33,7 @@ def send_email_activation_email(user, domain):
     result = send_mail(
         subject='Telet - Confirm Email',
         message=plain_text_message,
-        from_email=sender_email,
+        from_email=getattr(settings, 'DEFAULT_FROM_EMAIL'),
         recipient_list=[user.email, ],
         html_message=html_message
     )

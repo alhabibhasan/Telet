@@ -6,19 +6,15 @@ from users.views.authentication_views import *
 
 urlpatterns = [
     path('signin/',
-         TelerSignInView.as_view(),
+         UserSignInView.as_view(),
          name='signin'
          ),
     path('signup/',
-         TelerSignUpView.as_view(),
+         UserSignUpView.as_view(),
          name='signup'
          ),
-    path('signed-in/',
-         TelerSignedInView.as_view(),
-         name='signed_in'
-         ),
     path('signout/',
-         TelerUserSignout.as_view(),
+         UserSignoutView.as_view(),
          name='signout'
          ),
     path('activate/',
@@ -33,17 +29,13 @@ urlpatterns = [
          TelerPasswordResetView.as_view(),
          name='password_reset'
          ),
-    path('password-reset/done/',
-         TelerPasswordResetDoneView.as_view(),
-         name='password_reset_done'
-         ),
     path('password-reset/confirm/<uidb64>/<token>/',
          TelerPasswordResetConfirmView.as_view(),
          name='password_reset_confirm'
          ),
-    path('password-reset/complete/',
-         TelerPasswordResetCompleteView.as_view(),
-         name='password_reset_complete'
+    path('password-change/',
+         TelerPasswordChangeView.as_view(),
+         name='password_change'
          ),
 
 ]

@@ -1,13 +1,18 @@
-from django.contrib.auth import get_user_model
-from django.utils.crypto import get_random_string
+from django.contrib.auth import get_user_model, authenticate
+from django.contrib.auth.password_validation import validate_password
+from django.contrib.sites.shortcuts import get_current_site
+from django.core.exceptions import ValidationError
 from rest_framework import serializers
-from users.models import Teler
+from users.models import Teler, CustomUser
+from users.utils.emails import send_email_activation_email
 
 '''
 UserSerializer is used as a nested field within the TelerSerializer.
 
 At present, it is not used as a standalone serializer.
 '''
+
+
 class UserSerializer(serializers.ModelSerializer):
     password1 = serializers.CharField(write_only=True, required=True)
     password2 = serializers.CharField(write_only=True, required=True)
@@ -18,21 +23,26 @@ class UserSerializer(serializers.ModelSerializer):
             first_name=validated_data['first_name'],
             last_name=validated_data['last_name'],
             email=validated_data['email'],
-            username=validated_data['first_name'] + '.' + validated_data['last_name'] + '.' + get_random_string(6),
+            username=validated_data['email'],
         )
         user.set_password(validated_data['password1'])
-        user.username = user.first_name + '.' + user.last_name + '.' + str(user.id)
         user.save()
         return user
 
-    def validate_email(self, email):
-        if get_user_model().objects.filter(email=email).exists():
-            raise serializers.ValidationError('This email is already associated with another account.')
-        return email
 
     def validate(self, attrs):
         if attrs['password1'] != attrs['password2']:
             raise serializers.ValidationError('Passwords must match.')
+
+        user = CustomUser(attrs)
+
+        password = attrs['password1']
+
+        try:
+            validate_password(password=password, user=user)
+        except ValidationError:
+            raise serializers.ValidationError('Password cannot be too similar to your name or email.')
+
         return attrs
 
     class Meta:
@@ -58,8 +68,14 @@ class TelerSerializer(serializers.ModelSerializer):
         teler = Teler.objects.create(user=user,
                                      mobile_number=validated_data['mobile_number'],
                                      date_of_birth=validated_data['date_of_birth'],
-                                     gender=validated_data['gender']
+                                     gender=validated_data['gender'],
+                                     email_verified=False
                                      )
+        request = self.context['request']
+
+        if request is not None:
+            send_email_activation_email(user, get_current_site(request))
+
         return teler
 
     class Meta:
@@ -69,3 +85,6 @@ class TelerSerializer(serializers.ModelSerializer):
                   'date_of_birth',
                   'gender',
                   )
+
+
+

@@ -36,9 +36,28 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
+    'rest_framework.authtoken',
     'Telet',
     'users',
 ]
+
+DEFAULT_RENDERER_CLASSES = (
+    'rest_framework.renderers.JSONRenderer',
+)
+
+if DEBUG:
+    DEFAULT_RENDERER_CLASSES = DEFAULT_RENDERER_CLASSES + (
+        'rest_framework.renderers.BrowsableAPIRenderer',
+    )
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework.authentication.BasicAuthentication',
+        'rest_framework.authentication.TokenAuthentication',
+    ),
+    'DEFAULT_RENDERER_CLASSES': DEFAULT_RENDERER_CLASSES
+}
 
 AUTH_USER_MODEL = 'users.CustomUser'
 
@@ -138,7 +157,7 @@ def get_secret(setting, secrets=secrets):
     except KeyError:
         raise ImproperlyConfigured("Set the {} setting".format(setting))
 
-
+DEFAULT_FROM_EMAIL = 'hello@telet.com'
 EMAIL_HOST = get_secret('EMAIL_HOST')
 EMAIL_PORT = get_secret('EMAIL_PORT')
 EMAIL_HOST_USER = get_secret('EMAIL_HOST_USER')
@@ -147,3 +166,5 @@ EMAIL_USE_TLS = True
 
 # if DEBUG:
 #     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+
+AUTH_TOKEN_EXPIRE_AFTER_DAYS = 4 # 4 days

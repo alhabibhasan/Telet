@@ -1,66 +1,64 @@
 from django.contrib import messages
+from django.contrib.auth import get_user_model
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.views import LoginView, LogoutView
-from django.contrib.sites.shortcuts import get_current_site
-from django.shortcuts import redirect
+from django.core.exceptions import ObjectDoesNotExist
+
 from django.urls import reverse_lazy
-from django.views.generic import FormView, TemplateView
+from rest_framework import status
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.authtoken.models import Token
+from rest_framework.compat import authenticate
+from rest_framework.generics import CreateAPIView, GenericAPIView
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
-from users.utils.emails import send_email_activation_email
-from users.auth_mixins import TelerLogOutRequiredMixin
-from users.forms import UserLoginForm, UserSignUpForm
-from users.models import Teler
-
-
-class TelerSignInView(TelerLogOutRequiredMixin, LoginView):
-    redirect_url = reverse_lazy('users:signed_in')
-    redirect_error_message = 'You have already signed in.'
-    authentication_form = UserLoginForm
-    template_name = 'registration/teler_signin.html'
-
-    def get_success_url(self):
-        return reverse_lazy('users:signed_in')
+from users.expiring_token_auth import ExpiringTokenAuthentication
+from users.serializers.model_serializers import TelerSerializer
+from users.serializers.auth_serializers import TelerSigninSerializer
+from users.models import Teler, CustomUser
 
 
-class TelerSignUpView(TelerLogOutRequiredMixin, FormView):
-    redirect_url = reverse_lazy('users:signed_in')
-    redirect_error_message = 'You have already signed up.'
-    form_class = UserSignUpForm
-    template_name = 'registration/teler_signup.html'
+class UserSignInView(GenericAPIView):
+    serializer_class = TelerSigninSerializer
+
+    def login(self):
+        self.user = self.serializer.validated_data['user']
+
+        self.token, created = Token.objects.get_or_create(user=self.user)
 
     def post(self, request, *args, **kwargs):
-        sign_up_form = UserSignUpForm(request.POST)
-        if sign_up_form.is_valid():
-            user = sign_up_form.save(commit=False)
-            user.username = user.email
-            user.save()
 
-            teler = Teler(user=user,
-                          mobile_number=sign_up_form.cleaned_data['mobile_number'],
-                          date_of_birth=sign_up_form.cleaned_data['date_of_birth'],
-                          gender=sign_up_form.cleaned_data['gender']
-                          )
-            teler.save()
-            send_email_activation_email(user, get_current_site(self.request))
-            messages.info(request=request,
-                          message='You will need to activate your email address before you can sign in.' \
-                                  + ' Please check your emails.')
-            return redirect(to=reverse_lazy('users:signin'))
+        self.serializer = self.get_serializer(data=request.data)
 
-        return super().post(request, *args, **kwargs)
+        try:
+            self.serializer.is_valid(raise_exception=True)
+        except CustomUser.DoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        self.login()
+
+        return Response({'token': self.token.key},
+                        status=status.HTTP_200_OK)
 
 
-class TelerSignedInView(LoginRequiredMixin, TemplateView):
-    template_name = 'registration/teler_signed_in.html'
-    login_url = reverse_lazy('users:signin')
+class UserSignUpView(CreateAPIView):
+    '''
+    This is used to allow users to sign up.
+    '''
+    model = Teler
+    permission_classes = (AllowAny,)
+    serializer_class = TelerSerializer
 
 
-class TelerUserSignout(LoginRequiredMixin, LogoutView):
-    login_url = reverse_lazy('users:signin')
-    template_name = 'registration/teler_signed_out.html'
-    next_page = reverse_lazy('users:signin')
+class UserSignoutView(APIView):
+    authentication_classes = (ExpiringTokenAuthentication,)
+    permission_classes = (IsAuthenticated,)
 
-    def get_next_page(self):
-        messages.info(request=self.request,
-                      message='You have successfully signed out.')
-        return super().get_next_page()
+    def dispatch(self, request, *args, **kwargs):
+
+        expiring_token_auth = ExpiringTokenAuthentication()
+        expiring_token_auth.delete_token(request.auth)
+
+        return Response({"detail": "Successfully logged out."},
+                        status=status.HTTP_200_OK)

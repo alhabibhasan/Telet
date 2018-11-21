@@ -1,120 +1,181 @@
-from django.test import TestCase
+# Create your tests here.
 from django.urls import reverse_lazy
+from rest_framework import status
+from rest_framework.test import APIRequestFactory, APITestCase
+from rest_framework.utils import json
+from users.views.authentication_views import UserSignUpView
 
-from users.forms import UserSignUpForm
-from users.models import CustomUser
 
+class TestPatientSignUp(APITestCase):
+    # Init the factory object
+    factory = APIRequestFactory()
+    # Get the user sign up url
+    url = reverse_lazy('users:signup')
 
-class TestUserSignUpViews(TestCase):
-    def test_sign_up_normal(self):
-
-        data= {
-            'email': 'test@telet.com',
-            'first_name': 'Test',
-            'last_name': 'User',
-            'gender': 'M',
-            'date_of_birth': '01/01/2000',
-            'mobile_number': '07940236488',
-            'password1': 'random_password_123',
-            'password2': 'random_password_123'
+    def test_sign_up_valid_passwords(self):
+        """
+        Ensure that we can create an account
+        """
+        # Define the data to be used
+        data = {
+            "user": {
+                "first_name": "Test",
+                "last_name": "User",
+                "email": "test_user@telet.com",
+                "password1": "some_random_password123",
+                "password2": "some_random_password123"
+            },
+            "mobile_number": "07940236488",
+            "date_of_birth": "2000-01-01",
+            "gender": "M"
         }
 
-        response = self.client.post(reverse_lazy('users:signup'), data=data)
+        # define the request
+        request = self.factory.post(path=self.url, data=json.dumps(data), content_type='application/json')
 
-        user = CustomUser.objects.filter(email='test@telet.com')[0]
+        # init the view
+        view = UserSignUpView.as_view()
 
-        self.assertTrue(user.email == 'test@telet.com')
-        self.assertEqual(response.status_code, 302)
-        self.assertRedirects(response=response,expected_url='/users/signin/')
+        # send the request to the view and store the response
+        response = view(request)
 
+        self.assertEquals(response.status_code, status.HTTP_201_CREATED)
 
-    def test_sign_up_password_mismatch(self):
-
-        data={
-            'email': 'test@telet.com',
-            'first_name': 'Test',
-            'last_name': 'User',
-            'gender': 'M',
-            'date_of_birth': '01/01/2000',
-            'mobile_number': '07940236488',
-            'password1': 'random_password_123',
-            'password2': 'random_password_456'
+    def test_sign_up_invalid_passwords(self):
+        """
+        Ensure that we can create an account
+        """
+        # Define the data to be used
+        data = {
+            "user": {
+                "first_name": "Test",
+                "last_name": "User",
+                "email": "test_user@telet.com",
+                "password1": "password",
+                "password2": "password"
+            },
+            "mobile_number": "07940236488",
+            "date_of_birth": "2000-01-01",
+            "gender": "M"
         }
 
-        response = self.client.post(reverse_lazy('users:signup'), data=data)
+        # define the request
+        request = self.factory.post(path=self.url, data=json.dumps(data), content_type='application/json')
 
-        self.assertEqual(response.status_code, 200)
+        # init the view
+        view = UserSignUpView.as_view()
 
+        # send the request to the view and store the response
+        response = view(request)
 
-    def test_sign_up_invalid_email(self):
+        self.assertEquals(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-        data={
-            'email': 'test',
-            'first_name': 'Test',
-            'last_name': 'User',
-            'gender': 'M',
-            'date_of_birth': '01/01/2000',
-            'mobile_number': '07940236488',
-            'password1': 'random_password_123',
-            'password2': 'random_password_123'
+    def test_sign_up_duplicate_email(self):
+        """
+        Ensure that we can't create an account with an email that is already being used
+        """
+        data = {
+            "user": {
+                "first_name": "Test",
+                "last_name": "User",
+                "email": "test_user@telet.com",
+                "password1": "some_random_password123",
+                "password2": "some_random_password123"
+            },
+            "mobile_number": "07940236488",
+            "date_of_birth": "2000-01-01",
+            "gender": "M"
         }
+        view = UserSignUpView.as_view()
 
-        response = self.client.post(reverse_lazy('users:signup'), data=data)
+        first_request = self.factory.post(path=self.url, data=json.dumps(data), content_type='application/json')
+        view(first_request)  # send the first request
 
-        self.assertEqual(response.status_code, 200)
+        second_request = self.factory.post(path=self.url, data=json.dumps(data), content_type='application/json')
+        second_response = view(second_request)  # send the second request with the same data value
 
+        self.assertEquals(second_response.status_code, status.HTTP_400_BAD_REQUEST)
 
-    def test_sign_up_invalid_DOB(self):
-        data={
-            'email': 'test@telet.com',
-            'first_name': 'Test',
-            'last_name': 'User',
-            'gender': 'M',
-            'date_of_birth': '01/01/1',
-            'mobile_number': '07940236488',
-            'password1': 'random_password_123',
-            'password2': 'random_password_123'
+    def test_sign_up_mismatch_passwords(self):
+        """
+        Ensure that we can't create an account with mismatching passwords
+        """
+        data = {
+            "user": {
+                "first_name": "Test",
+                "last_name": "User",
+                "email": "test_user@telet.com",
+                "password1": "some_random_password123",
+                "password2": "some_random_password"
+            },
+            "mobile_number": "07940236488",
+            "date_of_birth": "2000-01-01",
+            "gender": "M"
         }
+        request = self.factory.post(path=self.url, data=json.dumps(data), content_type='application/json')
+        view = UserSignUpView.as_view()
+        response = view(request)
 
-        response = self.client.post(reverse_lazy('users:signup'), data=data)
-
-        self.assertEqual(response.status_code, 200)
+        self.assertEquals(response.status_code, status.HTTP_400_BAD_REQUEST)
 
 
-    def test_sign_up_invalid_gender(self):
-        data={
-            'email': 'test@telet.com',
-            'first_name': 'Test',
-            'last_name': 'User',
-            'gender': 'XXX',
-            'date_of_birth': '01/01/2000',
-            'mobile_number': '07940236488',
-            'password1': 'random_password_123',
-            'password2': 'random_password_123'
+    def test_sign_up_missing_required_name_fields(self):
+
+        data = {
+            "user": {
+                "first_name": "",
+                "last_name": "",
+                "email": "test_user@telet.com",
+                "password1": "some_random_password123",
+                "password2": "some_random_password123"
+            },
+            "mobile_number": "07940236488",
+            "date_of_birth": "2000-01-01",
+            "gender": "M"
         }
+        request = self.factory.post(path=self.url, data=json.dumps(data), content_type='application/json')
+        view = UserSignUpView.as_view()
+        response = view(request)
 
-        response = self.client.post(reverse_lazy('users:signup'), data=data)
+        self.assertEquals(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-        self.assertEqual(response.status_code, 200)
+    def test_sign_up_missing_required_password_fields(self):
 
-
-    def test_sign_up_email_exists(self):
-        from users.models import CustomUser
-        user = CustomUser(email='test@telet.com', username='test@telet.com')
-        user.set_password('random_password_123')
-        user.save()
-
-        data={
-            'email': 'test@telet.com',
-            'first_name': 'Test',
-            'last_name': 'User',
-            'gender': 'F',
-            'date_of_birth': '01/01/2000',
-            'mobile_number': '07940236488',
-            'password1': 'random_password_123',
-            'password2': 'random_password_123'
+        data = {
+            "user": {
+                "first_name": "",
+                "last_name": "",
+                "email": "test_user@telet.com",
+                "password1": "",
+                "password2": ""
+            },
+            "mobile_number": "07940236488",
+            "date_of_birth": "2000-01-01",
+            "gender": "M"
         }
+        request = self.factory.post(path=self.url, data=json.dumps(data), content_type='application/json')
+        view = UserSignUpView.as_view()
+        response = view(request)
 
-        response = self.client.post(reverse_lazy('users:signup'), data=data)
+        self.assertEquals(response.status_code, status.HTTP_400_BAD_REQUEST)
 
-        self.assertEqual(response.status_code, 200)
+
+    def test_sign_up_missing_non_required_fields(self):
+
+        data = {
+            "user": {
+                "first_name": "Test",
+                "last_name": "User",
+                "email": "test_user@telet.com",
+                "password1": "some_random_password123",
+                "password2": "some_random_password123"
+            },
+            "mobile_number": "",
+            "date_of_birth": "2000-01-01",
+            "gender": "M"
+        }
+        request = self.factory.post(path=self.url, data=json.dumps(data), content_type='application/json')
+        view = UserSignUpView.as_view()
+        response = view(request)
+
+        self.assertEquals(response.status_code, status.HTTP_201_CREATED)

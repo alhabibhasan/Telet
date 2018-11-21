@@ -1,80 +1,42 @@
-from django.contrib import messages
-from django.contrib.auth import login
-from django.contrib.sites.shortcuts import get_current_site
-from django.shortcuts import redirect
-from django.urls import reverse_lazy
-from django.utils.decorators import method_decorator
-from django.utils.encoding import force_text
-from django.utils.http import urlsafe_base64_decode
-from django.views.decorators.cache import never_cache
-from django.views.decorators.debug import sensitive_post_parameters
-from django.views.generic import TemplateView, FormView
+from rest_framework import status, serializers
+from rest_framework.generics import GenericAPIView
+from rest_framework.response import Response
 
-from users.utils.emails import send_email_activation_email
-from users.utils.token_generator import account_activation_token_generator
-from users.auth_mixins import TelerLogOutRequiredMixin
-from users.forms import SendEmailActivationForm
-from users.models import CustomUser, Teler
+from users.models import CustomUser
+from users.serializers.activation_serializers import UserActivationSerializer, SendUserActivationEmailSerializer
 
 
-class TelerUserActivation(TelerLogOutRequiredMixin, TemplateView):
-    redirect_url = reverse_lazy('users:signed_in')
-    redirect_error_message = 'You have already activated your account.'
+class TelerUserActivation(GenericAPIView):
+    serializer_class = UserActivationSerializer
 
-    @method_decorator(sensitive_post_parameters())
-    @method_decorator(never_cache)
-    def get(self, request, *args, **kwargs):
-        assert 'uidb64' in kwargs and 'token' in kwargs
+    '''
+    At the moment, because the front end is yet to be implemented, the activation email will contain 
+    a link with the uidb64 and token, this link will take you to a page that you need to enter those details into.
+    The front end would be made to take those credentials and post the form automatically.
+    '''
 
-        uidb64 = kwargs['uidb64']
-        token = kwargs['token']
+    def post(self, request, *args, **kwargs):
+        assert 'uidb64' and 'token' in request.data
+        self.serializer = self.get_serializer(data=request.data)
 
         try:
-            uid = force_text(urlsafe_base64_decode(uidb64))
+            self.serializer.is_valid(raise_exception=True)
+        except (serializers.ValidationError) as e:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
 
-            user = CustomUser.objects.get(id=uid)
-
-            teler = Teler.objects.get(user=user)
-
-        except (TypeError, ValueError, OverflowError, CustomUser.DoesNotExist, Teler.DoesNotExist):
-            user = None
-            teler = None
-
-        if user is not None and teler is not None and \
-                account_activation_token_generator.check_token(user=user, token=token):
-            user.is_active = True
-            user.save()
-
-            teler.email_verified = True
-            teler.save()
-
-            messages.info(request=request,
-                          message='You have successfully verified your email address. Welcome!')
-            login(request=request, user=user)
-            return redirect(reverse_lazy('users:signed_in'))
-
-        messages.error(request=request,
-                       message='Unfortunately that link didn\'t work, please request another one and try again.')
-        return redirect(reverse_lazy('users:signin'))
+        return Response({'activated': 'Account activated successfully.'},
+                        status=status.HTTP_200_OK)
 
 
-class TelerSendEmailActivationEmailView(TelerLogOutRequiredMixin, FormView):
-    redirect_url = reverse_lazy('users:signed_in')
-    redirect_error_message = 'You have already activated your account.'
+class TelerSendEmailActivationEmailView(GenericAPIView):
+    serializer_class = SendUserActivationEmailSerializer
 
-    form_class = SendEmailActivationForm
-    template_name = 'registration/teler_send_email_activation.html'
-    success_url = reverse_lazy('users:signin')
+    def post(self, request, *args, **kwargs):
+        self.serializser = self.get_serializer(data=request.data)
+        self.serializser.is_valid(raise_exception=True)
 
-    def form_valid(self, form):
-        if form.is_valid():
-            try:
-                user = CustomUser.objects.get(username=form.cleaned_data['email'])
-            except CustomUser.DoesNotExist:
-                user = None
-
-            if user is not None:
-                send_email_activation_email(user, get_current_site(self.request))
-            messages.info(request=self.request,
-                          message='An activation email was sent again, please check you emails.')
-            return super().form_valid(form)
+        return Response(
+            {
+                'sent': 'If a match was found, then an activation email was sent again, please check you emails.'
+            },
+            status=status.HTTP_200_OK)
